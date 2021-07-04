@@ -4,22 +4,21 @@
 
 #![no_std]
 
-#[cfg(feature = "cortex_m")]
+#[cfg(cortex_m)]
 nightly_crimes::nightly_crimes! {
-
 #![feature(asm)]
 
 use core::sync::atomic::{compiler_fence, Ordering};
 
 #[inline(always)]
 pub fn bkpt() {
-    asm!("bkpt");
+    unsafe { asm!("bkpt") };
 }
 
 #[inline(always)]
 pub fn control_r() -> u32 {
     let r;
-    asm!("mrs {}, CONTROL", out(reg) r);
+    unsafe { asm!("mrs {}, CONTROL", out(reg) r) };
     r
 }
 
@@ -27,11 +26,11 @@ pub fn control_r() -> u32 {
 pub unsafe fn control_w(w: u32) {
     // ISB is required after writing to CONTROL,
     // per ARM architectural requirements (see Application Note 321).
-    asm!(
+    unsafe { asm!(
         "msr CONTROL, {}",
         "isb",
         in(reg) w
-    );
+    )};
 
     // Ensure memory accesses are not reordered around the CONTROL update.
     compiler_fence(Ordering::SeqCst);
@@ -39,7 +38,7 @@ pub unsafe fn control_w(w: u32) {
 
 #[inline(always)]
 pub fn cpsid() {
-    asm!("cpsid i");
+    unsafe { asm!("cpsid i") };
 
     // Ensure no subsequent memory accesses are reordered to before interrupts are disabled.
     compiler_fence(Ordering::SeqCst);
@@ -50,7 +49,7 @@ pub unsafe fn cpsie() {
     // Ensure no preceeding memory accesses are reordered to after interrupts are enabled.
     compiler_fence(Ordering::SeqCst);
 
-    asm!("cpsie i");
+    unsafe { asm!("cpsie i") };
 }
 
 #[inline(always)]
@@ -60,52 +59,52 @@ pub fn delay(cyc: u32) {
     // for more cycles is okay.
     // Add 1 to prevent an integer underflow which would cause a long freeze
     let real_cyc = 1 + cyc / 2;
-    asm!(
+    unsafe { asm!(
         // Use local labels to avoid R_ARM_THM_JUMP8 relocations which fail on thumbv6m.
         "1:",
         "subs {}, #1",
         "bne 1b",
         inout(reg) real_cyc => _
-    );
+    )};
 }
 
 #[inline(always)]
 pub fn dmb() {
     compiler_fence(Ordering::SeqCst);
-    asm!("dmb");
+    unsafe { asm!("dmb") };
     compiler_fence(Ordering::SeqCst);
 }
 
 #[inline(always)]
 pub fn dsb() {
     compiler_fence(Ordering::SeqCst);
-    asm!("dsb");
+    unsafe { asm!("dsb") };
     compiler_fence(Ordering::SeqCst);
 }
 
 #[inline(always)]
 pub fn isb() {
     compiler_fence(Ordering::SeqCst);
-    asm!("isb");
+    unsafe { asm!("isb") };
     compiler_fence(Ordering::SeqCst);
 }
 
 #[inline(always)]
 pub fn msp_r() -> u32 {
     let r;
-    asm!("mrs {}, MSP", out(reg) r);
+    unsafe { asm!("mrs {}, MSP", out(reg) r) };
     r
 }
 
 #[inline(always)]
 pub unsafe fn msp_w(val: u32) {
-    asm!("msr MSP, {}", in(reg) val);
+    unsafe { asm!("msr MSP, {}", in(reg) val) };
 }
 
 #[inline(always)]
 pub fn apsr_r() -> u32 {
     let r;
-    asm!("mrs {}, APSR", out(reg) r);
+    unsafe { asm!("mrs {}, APSR", out(reg) r) };
     r
 }
 
@@ -114,83 +113,83 @@ pub fn nop() {
     // NOTE: This is a `pure` asm block, but applying that option allows the compiler to eliminate
     // the nop entirely (or to collapse multiple subsequent ones). Since the user probably wants N
     // nops when they call `nop` N times, let's not add that option.
-    asm!("nop");
+    unsafe { asm!("nop") };
 }
 
 #[inline(always)]
 pub fn pc_r() -> u32 {
     let r;
-    asm!("mov {}, pc", out(reg) r);
+    unsafe { asm!("mov {}, pc", out(reg) r) };
     r
 }
 
 #[inline(always)]
 pub unsafe fn pc_w(val: u32) {
-    asm!("mov pc, {}", in(reg) val);
+    unsafe { asm!("mov pc, {}", in(reg) val) };
 }
 
 #[inline(always)]
 pub fn lr_r() -> u32 {
     let r;
-    asm!("mov {}, lr", out(reg) r);
+    unsafe { asm!("mov {}, lr", out(reg) r) };
     r
 }
 
 #[inline(always)]
 pub unsafe fn lr_w(val: u32) {
-    asm!("mov lr, {}", in(reg) val);
+    unsafe { asm!("mov lr, {}", in(reg) val) };
 }
 
 #[inline(always)]
 pub fn primask_r() -> u32 {
     let r;
-    asm!("mrs {}, PRIMASK", out(reg) r);
+    unsafe { asm!("mrs {}, PRIMASK", out(reg) r) };
     r
 }
 
 #[inline(always)]
 pub fn psp_r() -> u32 {
     let r;
-    asm!("mrs {}, PSP", out(reg) r);
+    unsafe { asm!("mrs {}, PSP", out(reg) r) };
     r
 }
 
 #[inline(always)]
 pub unsafe fn psp_w(val: u32) {
-    asm!("msr PSP, {}", in(reg) val);
+    unsafe { asm!("msr PSP, {}", in(reg) val) };
 }
 
 #[inline(always)]
 pub fn sev() {
-    asm!("sev");
+    unsafe { asm!("sev") };
 }
 
 #[inline(always)]
 pub fn udf() -> ! {
-    asm!("udf #0", options(noreturn));
+    unsafe { asm!("udf #0", options(noreturn)) };
 }
 
 #[inline(always)]
 pub fn wfe() {
-    asm!("wfe");
+    unsafe { asm!("wfe") };
 }
 
 #[inline(always)]
 pub fn wfi() {
-    asm!("wfi");
+    unsafe { asm!("wfi") };
 }
 
 /// Semihosting syscall.
 #[inline(always)]
 pub unsafe fn sh_syscall(mut nr: u32, arg: u32) -> u32 {
-    asm!("bkpt #0xab", inout("r0") nr, in("r1") arg);
+    unsafe { asm!("bkpt #0xab", inout("r0") nr, in("r1") arg) };
     nr
 }
 
 /// Set CONTROL.SPSEL to 0, write `msp` to MSP, branch to `rv`.
 #[inline(always)]
 pub unsafe fn bootstrap(msp: u32, rv: u32) -> ! {
-    asm!(
+    unsafe { asm!(
         "mrs {tmp}, CONTROL",
         "bics {tmp}, {spsel}",
         "msr CONTROL, {tmp}",
@@ -204,7 +203,7 @@ pub unsafe fn bootstrap(msp: u32, rv: u32) -> ! {
         msp = in(reg) msp,
         rv = in(reg) rv,
         options(noreturn),
-    );
+    )};
 }
 
 // v7m *AND* v8m.main, but *NOT* v8m.base
@@ -216,31 +215,31 @@ mod v7m {
 
     #[inline(always)]
     pub unsafe fn basepri_max(val: u8) {
-        asm!("msr BASEPRI_MAX, {}", in(reg) val);
+        unsafe { asm!("msr BASEPRI_MAX, {}", in(reg) val) };
     }
 
     #[inline(always)]
     pub fn basepri_r() -> u8 {
         let r;
-        asm!("mrs {}, BASEPRI", out(reg) r);
+        unsafe { asm!("mrs {}, BASEPRI", out(reg) r) };
         r
     }
 
     #[inline(always)]
     pub unsafe fn basepri_w(val: u8) {
-        asm!("msr BASEPRI, {}", in(reg) val);
+        unsafe { asm!("msr BASEPRI, {}", in(reg) val) };
     }
 
     #[inline(always)]
     pub fn faultmask_r() -> u32 {
         let r;
-        asm!("mrs {}, FAULTMASK", out(reg) r);
+        unsafe { asm!("mrs {}, FAULTMASK", out(reg) r) };
         r
     }
 
     #[inline(always)]
     pub unsafe fn enable_icache() {
-        asm!(
+        unsafe {asm!(
             "ldr {0}, =0xE000ED14",         // CCR
             "mrs {2}, PRIMASK",             // save critical nesting info
             "cpsid i",                      // mask interrupts
@@ -253,13 +252,13 @@ mod v7m {
             out(reg) _,
             out(reg) _,
             out(reg) _,
-        );
+        )};
         compiler_fence(Ordering::SeqCst);
     }
 
     #[inline(always)]
     pub unsafe fn enable_dcache() {
-        asm!(
+        unsafe { asm!(
             "ldr {0}, =0xE000ED14",         // CCR
             "mrs {2}, PRIMASK",             // save critical nesting info
             "cpsid i",                      // mask interrupts
@@ -272,7 +271,7 @@ mod v7m {
             out(reg) _,
             out(reg) _,
             out(reg) _,
-        );
+        )};
         compiler_fence(Ordering::SeqCst);
     }
 }
@@ -283,7 +282,7 @@ pub use self::v7em::*;
 mod v7em {
     #[inline(always)]
     pub unsafe fn basepri_max_cm7_r0p1(val: u8) {
-        asm!(
+        unsafe { asm!(
             "mrs {1}, PRIMASK",
             "cpsid i",
             "tst.w {1}, #1",
@@ -293,12 +292,12 @@ mod v7em {
             "cpsie i",
             in(reg) val,
             out(reg) _,
-        );
+        )};
     }
 
     #[inline(always)]
     pub unsafe fn basepri_w_cm7_r0p1(val: u8) {
-        asm!(
+        unsafe { asm!(
             "mrs {1}, PRIMASK",
             "cpsid i",
             "tst.w {1}, #1",
@@ -308,7 +307,7 @@ mod v7em {
             "cpsie i",
             in(reg) val,
             out(reg) _,
-        );
+        )};
     }
 }
 
@@ -319,43 +318,43 @@ pub use self::v8m::*;
 mod v8m {
     #[inline(always)]
     pub fn tt(mut target: u32) -> u32 {
-        asm!("tt {target}, {target}", target = inout(reg) target);
+        unsafe { asm!("tt {target}, {target}", target = inout(reg) target) };
         target
     }
 
     #[inline(always)]
     pub fn ttt(mut target: u32) -> u32 {
-        asm!("ttt {target}, {target}", target = inout(reg) target);
+        unsafe { asm!("ttt {target}, {target}", target = inout(reg) target) };
         target
     }
 
     #[inline(always)]
     pub fn tta(mut target: u32) -> u32 {
-        asm!("tta {target}, {target}", target = inout(reg) target);
+        unsafe { asm!("tta {target}, {target}", target = inout(reg) target) };
         target
     }
 
     #[inline(always)]
     pub fn ttat(mut target: u32) -> u32 {
-        asm!("ttat {target}, {target}", target = inout(reg) target);
+        unsafe { asm!("ttat {target}, {target}", target = inout(reg) target) };
         target
     }
 
     #[inline(always)]
     pub fn msp_ns_r() -> u32 {
         let r;
-        asm!("mrs {}, MSP_NS", out(reg) r);
+        unsafe { asm!("mrs {}, MSP_NS", out(reg) r) };
         r
     }
 
     #[inline(always)]
     pub unsafe fn msp_ns_w(val: u32) {
-        asm!("msr MSP_NS, {}", in(reg) val);
+        unsafe { asm!("msr MSP_NS, {}", in(reg) val) };
     }
 
     #[inline(always)]
     pub unsafe fn bxns(val: u32) {
-        asm!("BXNS {}", in(reg) val);
+        unsafe { asm!("BXNS {}", in(reg) val) };
     }
 }
 
@@ -367,25 +366,25 @@ mod v8m_main {
     #[inline(always)]
     pub fn msplim_r() -> u32 {
         let r;
-        asm!("mrs {}, MSPLIM", out(reg) r);
+        unsafe { asm!("mrs {}, MSPLIM", out(reg) r) };
         r
     }
 
     #[inline(always)]
     pub unsafe fn msplim_w(val: u32) {
-        asm!("msr MSPLIM, {}", in(reg) val);
+        unsafe { asm!("msr MSPLIM, {}", in(reg) val) };
     }
 
     #[inline(always)]
     pub fn psplim_r() -> u32 {
         let r;
-        asm!("mrs {}, PSPLIM", out(reg) r);
+        unsafe { asm!("mrs {}, PSPLIM", out(reg) r) };
         r
     }
 
     #[inline(always)]
     pub unsafe fn psplim_w(val: u32) {
-        asm!("msr PSPLIM, {}", in(reg) val);
+        unsafe { asm!("msr PSPLIM, {}", in(reg) val) };
     }
 }
 
@@ -398,13 +397,13 @@ mod fpu {
     #[inline(always)]
     pub fn fpscr_r() -> u32 {
         let r;
-        asm!("vmrs {}, fpscr", out(reg) r);
+        unsafe { asm!("vmrs {}, fpscr", out(reg) r) };
         r
     }
 
     #[inline(always)]
     pub unsafe fn fpscr_w(val: u32) {
-        asm!("vmsr fpscr, {}", in(reg) val);
+        unsafe { asm!("vmsr fpscr, {}", in(reg) val) };
     }
 }
 
