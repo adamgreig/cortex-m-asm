@@ -3,9 +3,21 @@
 // Please refer to that repository for original authorship.
 
 #![no_std]
+#![cfg_attr(not(feature = "do-crimes"), feature(asm))]
+#![allow(unused_unsafe)]
+
+#[cfg(feature = "do-crimes")]
+use nightly_crimes::nightly_crimes;
+
+#[cfg(not(feature = "do-crimes"))]
+#[allow(unused_macros)]
+macro_rules! nightly_crimes {
+    (#![feature(asm)] $($code:tt)*) => { $($code)* }
+}
 
 #[cfg(cortex_m)]
-nightly_crimes::nightly_crimes! {
+nightly_crimes! {
+
 #![feature(asm)]
 
 use core::sync::atomic::{compiler_fence, Ordering};

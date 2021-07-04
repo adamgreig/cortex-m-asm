@@ -6,8 +6,7 @@
 
 Intrinsics for Cortex-M CPUs.
 
-Produces inline asm on stable Rust compilers, but you probably don't want to
-[know how](https://crates.io/crates/nightly-crimes).
+Requires a nightly Rust compiler to use the unstable `asm!()` macro.
 
 ## Licence
 

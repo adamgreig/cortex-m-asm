@@ -23,4 +23,8 @@ targets = [
 ]
 
 [dependencies]
-nightly-crimes = "1.0.2"
+nightly-crimes = { version = "1.0.2", optional = true }
+
+[features]
+default = []
+do-crimes = ["nightly-crimes"]
