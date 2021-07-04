@@ -400,7 +400,7 @@ mod v8m {
     #[allow(clippy::not_unsafe_ptr_arg_deref)]
     #[inline(always)]
     pub fn tt(mut target: *mut u32) -> u32 {
-        let target = target as u32;
+        let mut target = target as u32;
         unsafe { asm!("tt {target}, {target}", target = inout(reg) target) };
         target
     }
@@ -415,7 +415,7 @@ mod v8m {
     #[allow(clippy::not_unsafe_ptr_arg_deref)]
     #[inline(always)]
     pub fn ttt(mut target: *mut u32) -> u32 {
-        let target = target as u32;
+        let mut target = target as u32;
         unsafe { asm!("ttt {target}, {target}", target = inout(reg) target) };
         target
     }
@@ -431,7 +431,7 @@ mod v8m {
     #[allow(clippy::not_unsafe_ptr_arg_deref)]
     #[inline(always)]
     pub fn tta(mut target: *mut u32) -> u32 {
-        let target = target as u32;
+        let mut target = target as u32;
         unsafe { asm!("tta {target}, {target}", target = inout(reg) target) };
         target
     }
@@ -447,7 +447,7 @@ mod v8m {
     #[allow(clippy::not_unsafe_ptr_arg_deref)]
     #[inline(always)]
     pub fn ttat(mut target: *mut u32) -> u32 {
-        let target = target as u32;
+        let mut target = target as u32;
         unsafe { asm!("ttat {target}, {target}", target = inout(reg) target) };
         target
     }
