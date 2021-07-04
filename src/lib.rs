@@ -4,6 +4,7 @@
 
 #![no_std]
 
+#[cfg(feature = "cortex_m")]
 nightly_crimes::nightly_crimes! {
 
 #![feature(asm)]
