@@ -27,5 +27,6 @@ jobs:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.target }}
+          override: true
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
