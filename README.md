@@ -2,7 +2,7 @@
 
 [![crates.io](https://img.shields.io/crates/v/cortex-m-asm.svg)](https://crates.io/crates/cortex-m-asm)
 [![docs.rs](https://docs.rs/cortex-m-asm/badge.svg)](https://docs.rs/cortex-m-asm)
-![CI](https://github.com/adamgreig/cortex-m-asm/workflows/CI/badge.svg)
+![CI](https://github.com/adamgreig/cortex-m-asm/workflows/Build/badge.svg)
 
 Intrinsics for Cortex-M CPUs.
 
