@@ -20,7 +20,6 @@ jobs:
           - thumbv8m.main-none-eabihf
         rust:
           - nightly
-          - 1.53.0
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -32,17 +31,7 @@ jobs:
           override: true
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
-        if: matrix.rust == 'nightly'
-      - name: Build
-        run: cargo build --release --target ${{ matrix.target }} --features do-crimes
-        if: matrix.rust != 'nightly'
       - uses: actions-rs/clippy-check@v1
-        if: matrix.rust == 'nightly'
         with:
           args: "--target ${{ matrix.target }}"
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions-rs/clippy-check@v1
-        if: matrix.rust != 'nightly'
-        with:
-          args: "--target ${{ matrix.target }} --features do-crimes"
           token: ${{ secrets.GITHUB_TOKEN }}
