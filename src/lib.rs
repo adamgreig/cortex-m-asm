@@ -12,12 +12,12 @@ nightly_crimes::nightly_crimes! {
 use core::sync::atomic::{compiler_fence, Ordering};
 
 #[inline(always)]
-pub unsafe fn bkpt() {
+pub fn bkpt() {
     asm!("bkpt");
 }
 
 #[inline(always)]
-pub unsafe fn control_r() -> u32 {
+pub fn control_r() -> u32 {
     let r;
     asm!("mrs {}, CONTROL", out(reg) r);
     r
@@ -38,7 +38,7 @@ pub unsafe fn control_w(w: u32) {
 }
 
 #[inline(always)]
-pub unsafe fn cpsid() {
+pub fn cpsid() {
     asm!("cpsid i");
 
     // Ensure no subsequent memory accesses are reordered to before interrupts are disabled.
@@ -54,7 +54,7 @@ pub unsafe fn cpsie() {
 }
 
 #[inline(always)]
-pub unsafe fn delay(cyc: u32) {
+pub fn delay(cyc: u32) {
     // The loop will normally take 3 to 4 CPU cycles per iteration, but superscalar cores
     // (eg. Cortex-M7) can potentially do it in 2, so we use that as the lower bound, since delaying
     // for more cycles is okay.
@@ -70,28 +70,28 @@ pub unsafe fn delay(cyc: u32) {
 }
 
 #[inline(always)]
-pub unsafe fn dmb() {
+pub fn dmb() {
     compiler_fence(Ordering::SeqCst);
     asm!("dmb");
     compiler_fence(Ordering::SeqCst);
 }
 
 #[inline(always)]
-pub unsafe fn dsb() {
+pub fn dsb() {
     compiler_fence(Ordering::SeqCst);
     asm!("dsb");
     compiler_fence(Ordering::SeqCst);
 }
 
 #[inline(always)]
-pub unsafe fn isb() {
+pub fn isb() {
     compiler_fence(Ordering::SeqCst);
     asm!("isb");
     compiler_fence(Ordering::SeqCst);
 }
 
 #[inline(always)]
-pub unsafe fn msp_r() -> u32 {
+pub fn msp_r() -> u32 {
     let r;
     asm!("mrs {}, MSP", out(reg) r);
     r
@@ -103,14 +103,14 @@ pub unsafe fn msp_w(val: u32) {
 }
 
 #[inline(always)]
-pub unsafe fn apsr_r() -> u32 {
+pub fn apsr_r() -> u32 {
     let r;
     asm!("mrs {}, APSR", out(reg) r);
     r
 }
 
 #[inline(always)]
-pub unsafe fn nop() {
+pub fn nop() {
     // NOTE: This is a `pure` asm block, but applying that option allows the compiler to eliminate
     // the nop entirely (or to collapse multiple subsequent ones). Since the user probably wants N
     // nops when they call `nop` N times, let's not add that option.
@@ -118,7 +118,7 @@ pub unsafe fn nop() {
 }
 
 #[inline(always)]
-pub unsafe fn pc_r() -> u32 {
+pub fn pc_r() -> u32 {
     let r;
     asm!("mov {}, pc", out(reg) r);
     r
@@ -130,7 +130,7 @@ pub unsafe fn pc_w(val: u32) {
 }
 
 #[inline(always)]
-pub unsafe fn lr_r() -> u32 {
+pub fn lr_r() -> u32 {
     let r;
     asm!("mov {}, lr", out(reg) r);
     r
@@ -142,14 +142,14 @@ pub unsafe fn lr_w(val: u32) {
 }
 
 #[inline(always)]
-pub unsafe fn primask_r() -> u32 {
+pub fn primask_r() -> u32 {
     let r;
     asm!("mrs {}, PRIMASK", out(reg) r);
     r
 }
 
 #[inline(always)]
-pub unsafe fn psp_r() -> u32 {
+pub fn psp_r() -> u32 {
     let r;
     asm!("mrs {}, PSP", out(reg) r);
     r
@@ -161,22 +161,22 @@ pub unsafe fn psp_w(val: u32) {
 }
 
 #[inline(always)]
-pub unsafe fn sev() {
+pub fn sev() {
     asm!("sev");
 }
 
 #[inline(always)]
-pub unsafe fn udf() -> ! {
+pub fn udf() -> ! {
     asm!("udf #0", options(noreturn));
 }
 
 #[inline(always)]
-pub unsafe fn wfe() {
+pub fn wfe() {
     asm!("wfe");
 }
 
 #[inline(always)]
-pub unsafe fn wfi() {
+pub fn wfi() {
     asm!("wfi");
 }
 
@@ -220,7 +220,7 @@ mod v7m {
     }
 
     #[inline(always)]
-    pub unsafe fn basepri_r() -> u8 {
+    pub fn basepri_r() -> u8 {
         let r;
         asm!("mrs {}, BASEPRI", out(reg) r);
         r
@@ -232,7 +232,7 @@ mod v7m {
     }
 
     #[inline(always)]
-    pub unsafe fn faultmask_r() -> u32 {
+    pub fn faultmask_r() -> u32 {
         let r;
         asm!("mrs {}, FAULTMASK", out(reg) r);
         r
@@ -318,31 +318,31 @@ pub use self::v8m::*;
 #[cfg(armv8m)]
 mod v8m {
     #[inline(always)]
-    pub unsafe fn tt(mut target: u32) -> u32 {
+    pub fn tt(mut target: u32) -> u32 {
         asm!("tt {target}, {target}", target = inout(reg) target);
         target
     }
 
     #[inline(always)]
-    pub unsafe fn ttt(mut target: u32) -> u32 {
+    pub fn ttt(mut target: u32) -> u32 {
         asm!("ttt {target}, {target}", target = inout(reg) target);
         target
     }
 
     #[inline(always)]
-    pub unsafe fn tta(mut target: u32) -> u32 {
+    pub fn tta(mut target: u32) -> u32 {
         asm!("tta {target}, {target}", target = inout(reg) target);
         target
     }
 
     #[inline(always)]
-    pub unsafe fn ttat(mut target: u32) -> u32 {
+    pub fn ttat(mut target: u32) -> u32 {
         asm!("ttat {target}, {target}", target = inout(reg) target);
         target
     }
 
     #[inline(always)]
-    pub unsafe fn msp_ns_r() -> u32 {
+    pub fn msp_ns_r() -> u32 {
         let r;
         asm!("mrs {}, MSP_NS", out(reg) r);
         r
@@ -365,7 +365,7 @@ pub use self::v8m_main::*;
 #[cfg(armv8m_main)]
 mod v8m_main {
     #[inline(always)]
-    pub unsafe fn msplim_r() -> u32 {
+    pub fn msplim_r() -> u32 {
         let r;
         asm!("mrs {}, MSPLIM", out(reg) r);
         r
@@ -377,7 +377,7 @@ mod v8m_main {
     }
 
     #[inline(always)]
-    pub unsafe fn psplim_r() -> u32 {
+    pub fn psplim_r() -> u32 {
         let r;
         asm!("mrs {}, PSPLIM", out(reg) r);
         r
@@ -396,7 +396,7 @@ pub use self::fpu::*;
 #[cfg(has_fpu)]
 mod fpu {
     #[inline(always)]
-    pub unsafe fn fpscr_r() -> u32 {
+    pub fn fpscr_r() -> u32 {
         let r;
         asm!("vmrs {}, fpscr", out(reg) r);
         r
