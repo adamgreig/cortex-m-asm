@@ -1,4 +1,4 @@
-name: Build
+name: CI
 
 on:
   push:
@@ -27,6 +27,11 @@ jobs:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.target }}
+          components: clippy
           override: true
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
+      - uses: actions-rs/clippy-check@v1
+        with:
+          args: "--target ${{ matrix.target }}"
+          token: ${{ secrets.GITHUB_TOKEN }}

@@ -10,11 +10,16 @@ nightly_crimes::nightly_crimes! {
 
 use core::sync::atomic::{compiler_fence, Ordering};
 
+/// Puts the processor in Debug state. Debuggers can pick this up as a "breakpoint".
+///
+/// **NOTE** calling `bkpt` when the processor is not connected to a debugger will cause an
+/// exception.
 #[inline(always)]
 pub fn bkpt() {
     unsafe { asm!("bkpt") };
 }
 
+/// Reads the CONTROL register.
 #[inline(always)]
 pub fn control_r() -> u32 {
     let r;
@@ -22,6 +27,7 @@ pub fn control_r() -> u32 {
     r
 }
 
+/// Writes the CONTROL register.
 #[inline(always)]
 pub unsafe fn control_w(w: u32) {
     // ISB is required after writing to CONTROL,
@@ -36,6 +42,7 @@ pub unsafe fn control_w(w: u32) {
     compiler_fence(Ordering::SeqCst);
 }
 
+/// Disables all interrupts.
 #[inline(always)]
 pub fn cpsid() {
     unsafe { asm!("cpsid i") };
@@ -44,6 +51,11 @@ pub fn cpsid() {
     compiler_fence(Ordering::SeqCst);
 }
 
+/// Enables all interrupts.
+///
+/// # Safety
+///
+/// - Do not call this function inside an `interrupt::free` critical section.
 #[inline(always)]
 pub unsafe fn cpsie() {
     // Ensure no preceeding memory accesses are reordered to after interrupts are enabled.
@@ -52,7 +64,16 @@ pub unsafe fn cpsie() {
     unsafe { asm!("cpsie i") };
 }
 
-#[inline(always)]
+/// Blocks the program for *at least* `cycles` CPU cycles.
+///
+/// This is implemented in assembly so its execution time is independent of the optimization
+/// level, however it is dependent on the specific architecture and core configuration.
+///
+/// NOTE that the delay can take much longer if interrupts are serviced during its execution
+/// and the execution time may vary with other factors. This delay is mainly useful for simple
+/// timer-less initialization of peripherals if and only if accurate timing is not essential. In
+/// any other case please use a more accurate method to produce a delay.
+#[inline]
 pub fn delay(cyc: u32) {
     // The loop will normally take 3 to 4 CPU cycles per iteration, but superscalar cores
     // (eg. Cortex-M7) can potentially do it in 2, so we use that as the lower bound, since delaying
@@ -68,6 +89,11 @@ pub fn delay(cyc: u32) {
     )};
 }
 
+/// Data Memory Barrier
+///
+/// Ensures that all explicit memory accesses that appear in program order before the `DMB`
+/// instruction are observed before any explicit memory accesses that appear in program order
+/// after the `DMB` instruction.
 #[inline(always)]
 pub fn dmb() {
     compiler_fence(Ordering::SeqCst);
@@ -75,6 +101,13 @@ pub fn dmb() {
     compiler_fence(Ordering::SeqCst);
 }
 
+/// Data Synchronization Barrier
+///
+/// Acts as a special kind of memory barrier. No instruction in program order after this instruction
+/// can execute until this instruction completes. This instruction completes only when both:
+///
+///  * any explicit memory access made before this instruction is complete
+///  * all cache and branch predictor maintenance operations before this instruction complete
 #[inline(always)]
 pub fn dsb() {
     compiler_fence(Ordering::SeqCst);
@@ -82,6 +115,10 @@ pub fn dsb() {
     compiler_fence(Ordering::SeqCst);
 }
 
+/// Instruction Synchronization Barrier
+///
+/// Flushes the pipeline in the processor, so that all instructions following the `ISB` are fetched
+/// from cache or memory, after the instruction has been completed.
 #[inline(always)]
 pub fn isb() {
     compiler_fence(Ordering::SeqCst);
@@ -89,6 +126,7 @@ pub fn isb() {
     compiler_fence(Ordering::SeqCst);
 }
 
+/// Read the MSP register.
 #[inline(always)]
 pub fn msp_r() -> u32 {
     let r;
@@ -96,11 +134,13 @@ pub fn msp_r() -> u32 {
     r
 }
 
+/// Write the MSP register.
 #[inline(always)]
 pub unsafe fn msp_w(val: u32) {
     unsafe { asm!("msr MSP, {}", in(reg) val) };
 }
 
+/// Read the APSR register.
 #[inline(always)]
 pub fn apsr_r() -> u32 {
     let r;
@@ -108,6 +148,7 @@ pub fn apsr_r() -> u32 {
     r
 }
 
+/// A no-operation. Useful to prevent delay loops from being optimized away.
 #[inline(always)]
 pub fn nop() {
     // NOTE: This is a `pure` asm block, but applying that option allows the compiler to eliminate
@@ -116,6 +157,7 @@ pub fn nop() {
     unsafe { asm!("nop") };
 }
 
+/// Read the PC register.
 #[inline(always)]
 pub fn pc_r() -> u32 {
     let r;
@@ -123,11 +165,13 @@ pub fn pc_r() -> u32 {
     r
 }
 
+/// Write to the PC register.
 #[inline(always)]
 pub unsafe fn pc_w(val: u32) {
     unsafe { asm!("mov pc, {}", in(reg) val) };
 }
 
+/// Read the LR register.
 #[inline(always)]
 pub fn lr_r() -> u32 {
     let r;
@@ -135,11 +179,13 @@ pub fn lr_r() -> u32 {
     r
 }
 
+/// Write to the LR register.
 #[inline(always)]
 pub unsafe fn lr_w(val: u32) {
     unsafe { asm!("mov lr, {}", in(reg) val) };
 }
 
+/// Read the PRIMASK register.
 #[inline(always)]
 pub fn primask_r() -> u32 {
     let r;
@@ -147,6 +193,7 @@ pub fn primask_r() -> u32 {
     r
 }
 
+/// Read the PSP register.
 #[inline(always)]
 pub fn psp_r() -> u32 {
     let r;
@@ -154,26 +201,33 @@ pub fn psp_r() -> u32 {
     r
 }
 
+/// Write the PSP register.
 #[inline(always)]
 pub unsafe fn psp_w(val: u32) {
     unsafe { asm!("msr PSP, {}", in(reg) val) };
 }
 
+/// Send Event.
 #[inline(always)]
 pub fn sev() {
     unsafe { asm!("sev") };
 }
 
+/// Generate an Undefined Instruction exception.
+///
+/// Can be used as a stable alternative to `core::intrinsics::abort`.
 #[inline(always)]
 pub fn udf() -> ! {
     unsafe { asm!("udf #0", options(noreturn)) };
 }
 
+/// Wait For Event.
 #[inline(always)]
 pub fn wfe() {
     unsafe { asm!("wfe") };
 }
 
+/// Wait For Interrupt.
 #[inline(always)]
 pub fn wfi() {
     unsafe { asm!("wfi") };
@@ -187,8 +241,11 @@ pub unsafe fn sh_syscall(mut nr: u32, arg: u32) -> u32 {
 }
 
 /// Set CONTROL.SPSEL to 0, write `msp` to MSP, branch to `rv`.
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
 #[inline(always)]
-pub unsafe fn bootstrap(msp: u32, rv: u32) -> ! {
+pub unsafe fn bootstrap(msp: *const u32, rv: *const u32) -> ! {
+    let msp = msp as u32;
+    let rv = rv as u32;
     unsafe { asm!(
         "mrs {tmp}, CONTROL",
         "bics {tmp}, {spsel}",
@@ -213,11 +270,13 @@ pub use self::v7m::*;
 mod v7m {
     use core::sync::atomic::{compiler_fence, Ordering};
 
+    /// Write the BASEPRI_MAX register.
     #[inline(always)]
     pub unsafe fn basepri_max(val: u8) {
         unsafe { asm!("msr BASEPRI_MAX, {}", in(reg) val) };
     }
 
+    /// Read the BASEPRI register.
     #[inline(always)]
     pub fn basepri_r() -> u8 {
         let r;
@@ -225,11 +284,13 @@ mod v7m {
         r
     }
 
+    /// Write the BASEPRI register.
     #[inline(always)]
     pub unsafe fn basepri_w(val: u8) {
         unsafe { asm!("msr BASEPRI, {}", in(reg) val) };
     }
 
+    /// Read the FAULTMASK register.
     #[inline(always)]
     pub fn faultmask_r() -> u32 {
         let r;
@@ -237,6 +298,11 @@ mod v7m {
         r
     }
 
+    /// Enable ICACHE.
+    ///
+    /// The ICACHE must be invalidated before enabling.
+    ///
+    /// This method manages exclusive access to the SCB registers using a critical section.
     #[inline(always)]
     pub unsafe fn enable_icache() {
         unsafe {asm!(
@@ -256,6 +322,11 @@ mod v7m {
         compiler_fence(Ordering::SeqCst);
     }
 
+    /// Enable DCACHE.
+    ///
+    /// The DCACHE must be invalidated before enabling.
+    ///
+    /// This method manages exclusive access to the SCB registers using a critical section.
     #[inline(always)]
     pub unsafe fn enable_dcache() {
         unsafe { asm!(
@@ -280,6 +351,8 @@ mod v7m {
 pub use self::v7em::*;
 #[cfg(armv7em)]
 mod v7em {
+    /// Write to BASEPRI_MAX on Cortex-M7 r0p1 CPUs.
+    /// Accounts for erratum 837070.
     #[inline(always)]
     pub unsafe fn basepri_max_cm7_r0p1(val: u8) {
         unsafe { asm!(
@@ -295,6 +368,8 @@ mod v7em {
         )};
     }
 
+    /// Write to BASEPRI on Cortex-M7 r0p1 CPUs.
+    /// Accounts for erratum 837070.
     #[inline(always)]
     pub unsafe fn basepri_w_cm7_r0p1(val: u8) {
         unsafe { asm!(
@@ -316,30 +391,70 @@ pub use self::v8m::*;
 /// Baseline and Mainline.
 #[cfg(armv8m)]
 mod v8m {
+    /// Test Target
+    ///
+    /// Queries the Security state and access permissions of a memory location.
+    ///
+    /// Returns a Test Target Response Payload (cf section D1.2.215 of
+    /// Armv8-M Architecture Reference Manual).
+    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     #[inline(always)]
-    pub fn tt(mut target: u32) -> u32 {
+    pub fn tt(mut target: *mut u32) -> u32 {
+        let target = target as u32;
         unsafe { asm!("tt {target}, {target}", target = inout(reg) target) };
         target
     }
 
+    /// Test Target Unprivileged
+    ///
+    /// Queries the Security state and access permissions of a memory location for an unprivileged
+    /// access to that location.
+    ///
+    /// Returns a Test Target Response Payload (cf section D1.2.215 of
+    /// Armv8-M Architecture Reference Manual).
+    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     #[inline(always)]
-    pub fn ttt(mut target: u32) -> u32 {
+    pub fn ttt(mut target: *mut u32) -> u32 {
+        let target = target as u32;
         unsafe { asm!("ttt {target}, {target}", target = inout(reg) target) };
         target
     }
 
+    /// Test Target Alternate Domain
+    ///
+    /// Queries the Security state and access permissions of a memory location for a Non-Secure
+    /// access to that location. This instruction is only valid when executing in Secure state and
+    /// is undefined if used from Non-Secure state.
+    ///
+    /// Returns a Test Target Response Payload (cf section D1.2.215 of
+    /// Armv8-M Architecture Reference Manual).
+    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     #[inline(always)]
-    pub fn tta(mut target: u32) -> u32 {
+    pub fn tta(mut target: *mut u32) -> u32 {
+        let target = target as u32;
         unsafe { asm!("tta {target}, {target}", target = inout(reg) target) };
         target
     }
 
+    /// Test Target Alternate Domain Unprivileged
+    ///
+    /// Queries the Security state and access permissions of a memory location for a Non-Secure and
+    /// unprivileged access to that location. This instruction is only valid when executing in
+    /// Secure state and is undefined if used from Non-Secure state.
+    ///
+    /// Returns a Test Target Response Payload (cf section D1.2.215 of
+    /// Armv8-M Architecture Reference Manual).
+    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     #[inline(always)]
-    pub fn ttat(mut target: u32) -> u32 {
+    pub fn ttat(mut target: *mut u32) -> u32 {
+        let target = target as u32;
         unsafe { asm!("ttat {target}, {target}", target = inout(reg) target) };
         target
     }
 
+    /// Reads the Non-Secure MSP register from the Secure state.
+    ///
+    /// Executing this function in Non-Secure state will return 0.
     #[inline(always)]
     pub fn msp_ns_r() -> u32 {
         let r;
@@ -347,11 +462,18 @@ mod v8m {
         r
     }
 
+    /// Writes to the Non-Secure MSP register from the Secure state.
+    ///
+    /// Executing this function in Non-Seure state will be ignored.
     #[inline(always)]
     pub unsafe fn msp_ns_w(val: u32) {
         unsafe { asm!("msr MSP_NS, {}", in(reg) val) };
     }
 
+    /// Branch and Exchange Non-secure
+    ///
+    /// See section C2.4.26 of Armv8-M Architecture Reference Manual for details.
+    /// Undefined if executed in Non-Secure state.
     #[inline(always)]
     pub unsafe fn bxns(val: u32) {
         unsafe { asm!("BXNS {}", in(reg) val) };
@@ -363,6 +485,7 @@ pub use self::v8m_main::*;
 /// Mainline only.
 #[cfg(armv8m_main)]
 mod v8m_main {
+    /// Reads the MSPLIM register.
     #[inline(always)]
     pub fn msplim_r() -> u32 {
         let r;
@@ -370,11 +493,13 @@ mod v8m_main {
         r
     }
 
+    /// Writes to the MSPLIM register.
     #[inline(always)]
     pub unsafe fn msplim_w(val: u32) {
         unsafe { asm!("msr MSPLIM, {}", in(reg) val) };
     }
 
+    /// Reads the PSPLIM register.
     #[inline(always)]
     pub fn psplim_r() -> u32 {
         let r;
@@ -382,6 +507,7 @@ mod v8m_main {
         r
     }
 
+    /// Writes to the PSPLIM register.
     #[inline(always)]
     pub unsafe fn psplim_w(val: u32) {
         unsafe { asm!("msr PSPLIM, {}", in(reg) val) };
@@ -394,6 +520,7 @@ pub use self::fpu::*;
 /// All targets with FPU.
 #[cfg(has_fpu)]
 mod fpu {
+    /// Reads the FPSCR register.
     #[inline(always)]
     pub fn fpscr_r() -> u32 {
         let r;
@@ -401,6 +528,7 @@ mod fpu {
         r
     }
 
+    /// Writes to the FPSCR register.
     #[inline(always)]
     pub unsafe fn fpscr_w(val: u32) {
         unsafe { asm!("vmsr fpscr, {}", in(reg) val) };

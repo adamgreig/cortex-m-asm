@@ -10,5 +10,17 @@ readme = "README.md"
 repository = "https://github.com/adamgreig/cortex-m-asm"
 edition = "2018"
 
+[package.metadata.docs.rs]
+default-target = "thumbv7em-none-eabihf"
+targets = [
+    "thumbv6m-none-eabi",
+    "thumbv7m-none-eabi",
+    "thumbv7em-none-eabi",
+    "thumbv7em-none-eabihf",
+    "thumbv8m.base-none-eabi",
+    "thumbv8m.main-none-eabi",
+    "thumbv8m.main-none-eabihf",
+]
+
 [dependencies]
 nightly-crimes = "1.0.2"
